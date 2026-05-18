@@ -396,9 +396,11 @@ export function createRequireCache() {
 
     ownKeys(_target) {
       var array = [...$requireMap.$keys()];
+      var set = new Set(array);
       for (const key of $esmRegistryEvaluatedKeys()) {
-        if (!array.includes(key)) {
+        if (!set.has(key)) {
           $arrayPush(array, key);
+          set.add(key);
         }
       }
       return array;
