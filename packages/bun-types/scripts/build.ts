@@ -24,20 +24,22 @@ const docsDir = join(import.meta.dir, "../docs");
 const sourceDocsDir = join(import.meta.dir, "../../../docs");
 await Bun.$`rm -rf ${docsDir}`;
 
-const sourceDocFiles = new Bun.Glob("**/*.{md,mdx}").scanSync({ cwd: sourceDocsDir });
-for (const file of sourceDocFiles) {
-  const content = await Bun.file(join(sourceDocsDir, file)).text();
+const sourceDocFiles = [...new Bun.Glob("**/*.{md,mdx}").scanSync({ cwd: sourceDocsDir })];
+await Promise.all(
+  sourceDocFiles.map(async file => {
+    const content = await Bun.file(join(sourceDocsDir, file)).text();
 
-  const updatedContent = content
-    .replace(/\$BUN_LATEST_VERSION/g, BUN_VERSION)
-    // Prefix copied doc paths with /docs/ (handles both links and images)
-    .replace(
-      /(!?\[([^\]]*)\])\(\/(runtime|pm|test|bundler|project|guides|installation|quickstart|typescript|feedback|index)(\/[^)]*)?\)/g,
-      "$1(/docs/$3$4)",
-    )
-    // Convert non-copied content to absolute URLs (images, blog, etc.)
-    .replace(/(!?\[([^\]]*)\])\(\/(images|blog)(\/[^)]*)?\)/g, "$1(https://bun.com/$3$4)")
-    .replace(/https:\/\/bun\.com\/docs\/guides\//g, "https://bun.com/guides/");
+    const updatedContent = content
+      .replace(/\$BUN_LATEST_VERSION/g, BUN_VERSION)
+      // Prefix copied doc paths with /docs/ (handles both links and images)
+      .replace(
+        /(!?\[([^\]]*)\])\(\/(runtime|pm|test|bundler|project|guides|installation|quickstart|typescript|feedback|index)(\/[^)]*)?\)/g,
+        "$1(/docs/$3$4)",
+      )
+      // Convert non-copied content to absolute URLs (images, blog, etc.)
+      .replace(/(!?\[([^\]]*)\])\(\/(images|blog)(\/[^)]*)?\)/g, "$1(https://bun.com/$3$4)")
+      .replace(/https:\/\/bun\.com\/docs\/guides\//g, "https://bun.com/guides/");
 
-  await Bun.write(join(docsDir, file), updatedContent);
-}
+    await Bun.write(join(docsDir, file), updatedContent);
+  }),
+);
