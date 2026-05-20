@@ -11,8 +11,9 @@ const env = Bun.env;
 
 // This function is called at startup.
 async function start() {
-  let args: string[] = [];
+  let argsSet = new Set<string>();
   const cwd = process.cwd();
+  const nodeModulesPath = path.sep + "node_modules" + path.sep;
   let hostname = "localhost";
   let port: number | undefined = undefined;
   let enableConsoleLog = false;
@@ -81,7 +82,7 @@ yourself with Bun.serve().
 
       for (const file of glob.scanSync(cwd)) {
         let resolved = path.resolve(cwd, file);
-        if (resolved.includes(path.sep + "node_modules" + path.sep)) {
+        if (resolved.includes(nodeModulesPath)) {
           continue;
         }
         try {
@@ -90,11 +91,11 @@ yourself with Bun.serve().
           resolved = Bun.resolveSync("./" + resolved, cwd);
         }
 
-        if (resolved.includes(path.sep + "node_modules" + path.sep)) {
+        if (resolved.includes(nodeModulesPath)) {
           continue;
         }
 
-        args.push(resolved);
+        argsSet.add(resolved);
       }
     } else {
       let resolved = arg;
@@ -104,17 +105,15 @@ yourself with Bun.serve().
         resolved = Bun.resolveSync("./" + arg, cwd);
       }
 
-      if (resolved.includes(path.sep + "node_modules" + path.sep)) {
+      if (resolved.includes(nodeModulesPath)) {
         continue;
       }
 
-      args.push(resolved);
-    }
-
-    if (args.length > 1) {
-      args = [...new Set(args)];
+      argsSet.add(resolved);
     }
   }
+
+  let args = Array.from(argsSet);
 
   if (args.length === 0) {
     throw new Error("No HTML files found matching " + JSON.stringify(Bun.main));
